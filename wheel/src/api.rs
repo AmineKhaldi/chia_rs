@@ -12,6 +12,7 @@ use chia::gen::flags::{
 use chia::gen::run_puzzle::run_puzzle as native_run_puzzle;
 use chia::gen::solution_generator::solution_generator as native_solution_generator;
 use chia::gen::solution_generator::solution_generator_backrefs as native_solution_generator_backrefs;
+use chia::knapsack::native_knapsack_coin_algorithm;
 use chia::merkle_set::compute_merkle_set_root as compute_merkle_root_impl;
 use chia_protocol::{
     BlockRecord, Bytes32, ChallengeBlockInfo, ChallengeChainSubSlot, ClassgroupElement, Coin,
@@ -46,6 +47,7 @@ use pyo3::types::PyList;
 use pyo3::types::PyModule;
 use pyo3::types::PyTuple;
 use pyo3::{wrap_pyfunction, PyResult, Python};
+use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::zip;
 
@@ -330,6 +332,17 @@ fn fast_forward_singleton<'p>(
     ))
 }
 
+#[pyfunction]
+fn knapsack_coin_algorithm(
+    smaller_coins: Vec<Coin>,
+    target: u64,
+    max_coin_amount: u64,
+    max_num_coins: usize,
+    seed: Option<Vec<u8>>,
+) -> Option<HashSet<Coin>> {
+    native_knapsack_coin_algorithm(smaller_coins, target, max_coin_amount, max_num_coins, seed)
+}
+
 #[pymodule]
 pub fn chia_rs(py: Python, m: &PyModule) -> PyResult<()> {
     // generator functions
@@ -483,6 +496,8 @@ pub fn chia_rs(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<AugSchemeMPL>()?;
 
     compression::add_submodule(py, m)?;
+
+    m.add_function(wrap_pyfunction!(knapsack_coin_algorithm, m)?)?;
 
     Ok(())
 }
